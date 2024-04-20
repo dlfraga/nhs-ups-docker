@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update
-RUN apt install unzip -y
+RUN apt install unzip tzdata -y
 COPY ./nhsups_3.1.36_x86_64_eGLIBC_2.11.zip /tmp
 RUN cd /tmp \
 && unzip ./nhsups_3.1.36_x86_64_eGLIBC_2.11.zip \
