@@ -5,7 +5,7 @@
 <!ENTITY author    "dlfraga">
 <!ENTITY version   "2024.04.23b">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/&author;/nhs-ups-docker/master">
-<!ENTITY pluginURL "&gitURL;/Unraid-plugin-nhs-client/&name;.plg">
+<!ENTITY pluginURL "&gitURL;/Unraid-plugin-nhs-client/plugin/&name;.plg">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
 <!ENTITY plgNAME   "&name;-&version;-x86_64-1">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
@@ -15,30 +15,17 @@
 
 <CHANGES>
 ##&name;
-###2024.04.23b
-###2024.04.23a
-###2024.04.23a
-
-###2024.04.22
+###2024.04.23
 - initial unRAID 6 release.
 </CHANGES>
 
 <!--
 This plugin installs the nhsupsclient extracted from the official linux x64 distribution
 -->
-<FILE Name="&plgPATH;/freeipmi-1.6.6-x86_64-1.txz" Min="6.8" Run="/sbin/upgradepkg --install-new">
-<URL>&pkgURL;/freeipmi-1.6.6-x86_64-1.txz</URL>
-<MD5>604ecc5e4756c0347fb4a1d9be4c4000</MD5>
-</FILE>
 
-<FILE Name="&plgPATH;/freeipmi-1.5.7-x86_64-2.txz" Min="6.2" Max="6.7.99" Run="/sbin/upgradepkg --install-new">
-<URL>&pkgURL;/freeipmi-1.5.7-x86_64-2.txz</URL>
-<MD5>66a3efd19bd7cc53ef07c14a77431fe7</MD5>
-</FILE>
-
-<FILE Name="&plgPATH;/freeipmi-1.4.11-x86_64-3.txz" Min="6.1" Max="6.1.99" Run="/sbin/upgradepkg --install-new">
-<URL>&pkgURL;/freeipmi-1.4.11-x86_64-3.txz</URL>
-<MD5>6c7839886f7c7b0cc4947aaf6199d60e</MD5>
+<FILE Name="&plgPATH;/nhsupsclient-2024.04.23b-x86_64-1.txz" Min="6.1" Max="6.1.99" Run="/sbin/upgradepkg --install-new">
+<URL>&pkgURL;/nhsupsclient-2024.04.23b-x86_64-1.txz</URL>
+<MD5>1b1839ef1b60d038219b05461b65509f</MD5>
 </FILE>
 
 
@@ -83,24 +70,11 @@ else
 
     upgradepkg --install-new &plgPATH;/&plgNAME;.txz
 
-    if [ -e "/boot/config/plugins/ipmi/boards.json" ]; then
-         mv &plgPATH;/boards.json &plgPATH;/board.json
-    fi
-
-    # Load impi drivers
-    echo "loading ipmi drivers..."
-    for module in ipmi_msghandler ipmi_devintf ipmi_si; do
-        modprobe -q $module
-    done
-
-    # Start scripts if enabled
     echo "starting ipmi services..."
-    at -M -f /tmp/start_&name; now 2>/dev/null
+    ./etc/rc.d/rc.&name; start 2>/dev/null
 
     sleep 1
-
-    rm -f /tmp/start_&name;
-
+    
     # Cleaning old source files
     find &plgPATH;/ -type f -iname "&name;*.txz" ! -iname "*&version;*" -delete
     find &plgPATH;/ -type f -iname "&name;*.md5" ! -iname "*&version;*" -delete
@@ -108,7 +82,7 @@ else
 echo ""
 echo "-----------------------------------------------------------"
 echo " &name; has been installed."
-echo " Copyright 2015-2021, &author;"
+echo " Copyright 2015-2024, &author;"
 echo " Version: &version;"
 echo "-----------------------------------------------------------"
 echo ""
@@ -123,33 +97,18 @@ The 'remove' script.
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>
 #stop daemon
-echo "stopping ipmi services..."
-/etc/rc.d/rc.ipmiseld stop
+echo "stopping nhsclient service..."
+/etc/rc.d/rc.nhsupsclient stop
 sleep 1
-/etc/rc.d/rc.ipmitail stop
-sleep 1
-echo "stopping ipmi fan control..."
-sleep 1
-/usr/sbin/ipmifan --quit
-sleep 1
-
-rm -rf &plgPATH;/libgcrypt*.txz
 
 removepkg &plgPATH;/*.txz
-rm -rf &emhttp;
 rm -f &plgPATH;/*.txz \
   &plgPATH;/*.md5
-
-
-echo "unloading ipmi drivers..."
-for module in ipmi_msghandler ipmi_devintf ipmi_si; do
-    modprobe -r $module
-done
 
 echo ""
 echo "-----------------------------------------------------------"
 echo " &name; has been removed."
-echo " Copyright 2015-2021, &author;"
+echo " Copyright 2015-2024, &author;"
 echo " Version: &version;"
 echo "-----------------------------------------------------------"
 echo ""
