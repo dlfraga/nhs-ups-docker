@@ -1,0 +1,159 @@
+<?xml version='1.0' standalone='yes'?>
+
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "nhsupsclient">
+<!ENTITY author    "dlfraga">
+<!ENTITY version   "2024.04.23b">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/&author;/nhs-ups-docker/master">
+<!ENTITY pluginURL "&gitURL;/Unraid-plugin-nhs-client/&name;.plg">
+<!ENTITY plgPATH   "/boot/config/plugins/&name;">
+<!ENTITY plgNAME   "&name;-&version;-x86_64-1">
+<!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
+]>
+
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
+
+<CHANGES>
+##&name;
+###2024.04.23b
+###2024.04.23a
+###2024.04.23a
+
+###2024.04.22
+- initial unRAID 6 release.
+</CHANGES>
+
+<!--
+This plugin installs the nhsupsclient extracted from the official linux x64 distribution
+-->
+<FILE Name="&plgPATH;/freeipmi-1.6.6-x86_64-1.txz" Min="6.8" Run="/sbin/upgradepkg --install-new">
+<URL>&pkgURL;/freeipmi-1.6.6-x86_64-1.txz</URL>
+<MD5>604ecc5e4756c0347fb4a1d9be4c4000</MD5>
+</FILE>
+
+<FILE Name="&plgPATH;/freeipmi-1.5.7-x86_64-2.txz" Min="6.2" Max="6.7.99" Run="/sbin/upgradepkg --install-new">
+<URL>&pkgURL;/freeipmi-1.5.7-x86_64-2.txz</URL>
+<MD5>66a3efd19bd7cc53ef07c14a77431fe7</MD5>
+</FILE>
+
+<FILE Name="&plgPATH;/freeipmi-1.4.11-x86_64-3.txz" Min="6.1" Max="6.1.99" Run="/sbin/upgradepkg --install-new">
+<URL>&pkgURL;/freeipmi-1.4.11-x86_64-3.txz</URL>
+<MD5>6c7839886f7c7b0cc4947aaf6199d60e</MD5>
+</FILE>
+
+
+<!--
+The 'plugin' package file.
+-->
+<FILE Name="&plgPATH;/&plgNAME;.txz">
+<URL>&gitURL;/archive/&plgNAME;.txz</URL>
+</FILE>
+
+<!--
+The 'plugin' package MD5 hash.
+-->
+<FILE Name="&plgPATH;/&plgNAME;.md5">
+<URL>&gitURL;/archive/&plgNAME;.md5</URL>
+</FILE>
+
+
+<!--
+The 'install' script.
+-->
+<FILE Run="/bin/bash" Method="install">
+<INLINE>
+#Verify Unraid Version
+source /etc/unraid-version
+VER=${version:0:3}
+
+if [[ $VER == 6.0 ]]; then
+    echo "Unraid version 6.1 or higher is required"
+    exit 1
+fi
+
+# Verify and install plugin package
+sum1=$(/usr/bin/md5sum &plgPATH;/&plgNAME;.txz)
+sum2=$(/usr/bin/cat &plgPATH;/&plgNAME;.md5)
+if [ "${sum1:0:32}" != "${sum2:0:32}" ]; then
+    echo "Wrong 'plugin' package md5 hash."
+    rm &plgPATH;/&plgNAME;.txz \
+         &plgPATH;/&plgNAME;.md5
+    exit 1
+else
+
+    upgradepkg --install-new &plgPATH;/&plgNAME;.txz
+
+    if [ -e "/boot/config/plugins/ipmi/boards.json" ]; then
+         mv &plgPATH;/boards.json &plgPATH;/board.json
+    fi
+
+    # Load impi drivers
+    echo "loading ipmi drivers..."
+    for module in ipmi_msghandler ipmi_devintf ipmi_si; do
+        modprobe -q $module
+    done
+
+    # Start scripts if enabled
+    echo "starting ipmi services..."
+    at -M -f /tmp/start_&name; now 2>/dev/null
+
+    sleep 1
+
+    rm -f /tmp/start_&name;
+
+    # Cleaning old source files
+    find &plgPATH;/ -type f -iname "&name;*.txz" ! -iname "*&version;*" -delete
+    find &plgPATH;/ -type f -iname "&name;*.md5" ! -iname "*&version;*" -delete
+
+echo ""
+echo "-----------------------------------------------------------"
+echo " &name; has been installed."
+echo " Copyright 2015-2021, &author;"
+echo " Version: &version;"
+echo "-----------------------------------------------------------"
+echo ""
+
+fi
+</INLINE>
+</FILE>
+
+<!--
+The 'remove' script.
+-->
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+#stop daemon
+echo "stopping ipmi services..."
+/etc/rc.d/rc.ipmiseld stop
+sleep 1
+/etc/rc.d/rc.ipmitail stop
+sleep 1
+echo "stopping ipmi fan control..."
+sleep 1
+/usr/sbin/ipmifan --quit
+sleep 1
+
+rm -rf &plgPATH;/libgcrypt*.txz
+
+removepkg &plgPATH;/*.txz
+rm -rf &emhttp;
+rm -f &plgPATH;/*.txz \
+  &plgPATH;/*.md5
+
+
+echo "unloading ipmi drivers..."
+for module in ipmi_msghandler ipmi_devintf ipmi_si; do
+    modprobe -r $module
+done
+
+echo ""
+echo "-----------------------------------------------------------"
+echo " &name; has been removed."
+echo " Copyright 2015-2021, &author;"
+echo " Version: &version;"
+echo "-----------------------------------------------------------"
+echo ""
+</INLINE>
+</FILE>
+
+</PLUGIN>

@@ -1,0 +1,74 @@
+#!/bin/sh
+# start/stop/restart nhsupsclient:
+# based on IPMI-unRAID plugin by dmacias72 
+PROG="nhsupsclient"
+DAEMON="/usr/sbin/$PROG"
+LOCKFILE="/var/lock/$PROG"
+PIDFILE="/var/run/$PROG.pid"
+OPTIONS=""
+
+
+# Start nhsupsclient:
+nhsupsclient_start() {
+    # no-op if already running
+    if [ ! -r "$PIDFILE" ]; then
+        echo "starting $PROG..."
+        sleep 1
+
+        nohup $DAEMON >/dev/null 2>&1 | echo $! > $PIDFILE &
+        touch $LOCKFILE
+        TIMER=0
+        while [ ! -e $PIDFILE ]; do
+            sleep 1
+            let TIMER=$TIMER+1
+            if [ $TIMER -gt 5 ]; then
+                echo -n "$PIDFILE not created"
+            break
+            fi
+        done
+    else
+        echo "$PROG is running..."
+    fi
+}
+
+# Stop nhsupsclient:
+nhsupsclient_stop() {
+    # no-op if not running
+    if [ -r $PIDFILE ]; then
+        #stop nhsupsclient
+        echo "stopping $PROG..."
+
+        TIMER=0
+        while `killall $PROG 2>/dev/null`; do
+            sleep 1
+            TIMER=$((TIMER+1))
+            if [ $TIMER -ge 30 ]; then
+                killall -9 $PROG
+                sleep 1
+                break
+            fi
+        done
+        rm -f $LOCKFILE && rm -f $PIDFILE
+    fi
+}
+
+# Restart nhsupsclient:
+nhsupsclient_restart() {
+    nhsupsclient_stop
+    sleep 1
+    nhsupsclient_start
+}
+
+case "$1" in
+'start')
+  nhsupsclient_start
+  ;;
+'stop')
+  nhsupsclient_stop
+  ;;
+'restart')
+  nhsupsclient_restart
+  ;;
+*)
+  echo "usage rc.nhsupsclient: start|stop|restart"
+esac
