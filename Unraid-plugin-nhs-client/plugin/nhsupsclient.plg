@@ -6,7 +6,7 @@
 <!ENTITY version   "2024.04.23b">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/&author;/nhs-ups-docker/master">
 <!ENTITY pluginURL "&gitURL;/Unraid-plugin-nhs-client/plugin/&name;.plg">
-<!ENTITY pkgURL    "&gitURL;/archive">
+<!ENTITY pkgURL    "&gitURL;/Unraid-plugin-nhs-client/archive">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
 <!ENTITY plgNAME   "&name;-&version;-x86_64-1">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
@@ -24,7 +24,7 @@
 This plugin installs the nhsupsclient extracted from the official linux x64 distribution
 -->
 
-<FILE Name="&plgPATH;/nhsupsclient-2024.04.23b-x86_64-1.txz" Min="6.1" Max="6.1.99" Run="/sbin/upgradepkg --install-new">
+<FILE Name="&plgPATH;/nhsupsclient-2024.04.23b-x86_64-1.txz" Min="6.12" Max="6.12.99" Run="/sbin/upgradepkg --install-new">
 <URL>&pkgURL;/nhsupsclient-2024.04.23b-x86_64-1.txz</URL>
 <MD5>1b1839ef1b60d038219b05461b65509f</MD5>
 </FILE>
@@ -34,14 +34,14 @@ This plugin installs the nhsupsclient extracted from the official linux x64 dist
 The 'plugin' package file.
 -->
 <FILE Name="&plgPATH;/&plgNAME;.txz">
-<URL>&gitURL;/archive/&plgNAME;.txz</URL>
+<URL>&gitURL;/Unraid-plugin-nhs-client/archive/&plgNAME;.txz</URL>
 </FILE>
 
 <!--
 The 'plugin' package MD5 hash.
 -->
 <FILE Name="&plgPATH;/&plgNAME;.md5">
-<URL>&gitURL;/archive/&plgNAME;.md5</URL>
+<URL>&gitURL;/Unraid-plugin-nhs-client/archive/&plgNAME;.md5</URL>
 </FILE>
 
 
